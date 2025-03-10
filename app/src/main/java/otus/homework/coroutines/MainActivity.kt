@@ -2,12 +2,12 @@ package otus.homework.coroutines
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var catsPresenter: CatsPresenter
-
     private val diContainer = DiContainer()
+    private val catsViewModel = CatsViewModelFactory(diContainer.service, diContainer.serviceCatsImage).create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -15,16 +15,16 @@ class MainActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.activity_main, null) as CatsView
         setContentView(view)
 
-        catsPresenter = CatsPresenter(diContainer.service)
-        view.presenter = catsPresenter
-        catsPresenter.attachView(view)
-        catsPresenter.onInitComplete()
-    }
-
-    override fun onStop() {
-        if (isFinishing) {
-            catsPresenter.detachView()
+        findViewById<Button>(R.id.button).setOnClickListener {
+            catsViewModel.getCatsViewData()
         }
-        super.onStop()
+
+        catsViewModel.catsLiveData.observe(this) {
+            result ->
+            when (result) {
+                is Result.Success -> view.populate(result.fact)
+                is Result.Error -> view.showError(result.errorMessage)
+            }
+        }
     }
 }
